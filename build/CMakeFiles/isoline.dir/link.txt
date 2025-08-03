@@ -1,0 +1,1 @@
+/sbin/cc -Wl,--dependency-file=CMakeFiles/isoline.dir/link.d CMakeFiles/isoline.dir/main.c.o -o isoline  -Wl,-rpath,/home/komano/grepos/c_sdl_isoline/build/external/sdl external/sdl/libSDL3.so.0.3.0 -lm
