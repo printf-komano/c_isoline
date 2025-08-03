@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/komano/grepos/c_sdl_isoline/build/cmake_install.cmake",
-		"/home/komano/grepos/c_sdl_isoline/build/external/sdl/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

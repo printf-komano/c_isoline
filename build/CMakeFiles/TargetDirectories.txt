@@ -1,8 +1,0 @@
-/home/komano/grepos/c_sdl_isoline/build/CMakeFiles/isoline.dir
-/home/komano/grepos/c_sdl_isoline/build/CMakeFiles/edit_cache.dir
-/home/komano/grepos/c_sdl_isoline/build/CMakeFiles/rebuild_cache.dir
-/home/komano/grepos/c_sdl_isoline/build/external/sdl/CMakeFiles/SDL3-shared.dir
-/home/komano/grepos/c_sdl_isoline/build/external/sdl/CMakeFiles/SDL3_test.dir
-/home/komano/grepos/c_sdl_isoline/build/external/sdl/CMakeFiles/SDL_uclibc.dir
-/home/komano/grepos/c_sdl_isoline/build/external/sdl/CMakeFiles/edit_cache.dir
-/home/komano/grepos/c_sdl_isoline/build/external/sdl/CMakeFiles/rebuild_cache.dir
