@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <stdbool.h>
 
 /*
 The main goal is to trace a contour (line)
@@ -12,6 +12,7 @@ we can start from type definitions
 */
 
 typedef float il_vec2[2];
+typedef uint32_t il_vec2i[2];
 typedef uint32_t il_connection[2];
 
 
@@ -31,6 +32,8 @@ typedef struct {
 
     float f_border_value; // value where line is going
     
+    il_vec2i grid_len;
+        
 } il_isoline_config;
 
 
@@ -49,6 +52,15 @@ typedef struct {
     size_t connections_cap;
 } il_isoline_data;
 
+
+
+static void push_point(il_vec2 point){
+        
+}
+
+static void push_connection(il_connection connection){
+
+}
 
 
 
@@ -73,14 +85,35 @@ static float directed_difference(
 
 
 
-void il_get_isoline_data(il_isoline_data * out, il_isoline_config * config);
+
+static inline size_t grid2_to_flat(size_t x, size_t y, size_t x_len){
+    return x + y*x_len;
+}
+
+static inline void grid2_to_floats(
+        size_t x, size_t y, il_isoline_config config, il_vec2 out
+        )
+{
+    float x_grid_scale = (float)config.scale[0] / config.grid_len[0];
+    float y_grid_scale = (float)config.scale[1] / config.grid_len[1];
+
+    out[0] = config.offset[0] + x*x_grid_scale;
+    out[1] = config.offset[1] + y*y_grid_scale;
+}
 
 
 
+void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
+    
+    //first step is to create value grid, where
+    bool * grid_values = (bool*) malloc(
+            config.grid_len[0] * config.grid_len[1] * sizeof(bool)
+    );
 
-
-
-
-void il_get_isoline_data(il_isoline_data * out, il_isoline_config * config){
+    for (size_t yi=0; yi<config.grid_len[1]; ++yi){
+        for (size_t xi=0; xi<config.grid_len[0]; ++xi){
+            
+        }
+    }
 
 }
