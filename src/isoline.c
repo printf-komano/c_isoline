@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 /*
 The main goal is to trace a contour (line)
@@ -24,10 +25,12 @@ typedef struct {
     il_vec2 scale; // size of the area
 
     
-    float (*f)(float *, size_t);    // any mathematical function 
-                                    // that returns float value;
-                                    // first 2 parameters are 
-                                    // considered as (x,y)
+    float (*f)(float *, size_t);   // any mathematical function 
+                                            // that returns float value;
+                                            // first 2 parameters are 
+                                            // considered as (x,y)
+
+    float * f_param;
     size_t f_param_len;
 
     float f_border_value; // value where line is going
@@ -90,7 +93,10 @@ static inline size_t grid2_to_flat(size_t x, size_t y, size_t x_len){
     return x + y*x_len;
 }
 
-static inline void grid2_to_floats(
+
+#define GRID2_TO_FLAT(x,y,config) (x + y*config.grid_len[0])
+
+static inline void grid2_to_coordinates(
         size_t x, size_t y, il_isoline_config config, il_vec2 out
         )
 {
@@ -103,17 +109,42 @@ static inline void grid2_to_floats(
 
 
 
+
+
 void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
     
     //first step is to create value grid, where
-    bool * grid_values = (bool*) malloc(
-            config.grid_len[0] * config.grid_len[1] * sizeof(bool)
+    float * f_values = (float*) malloc(
+            config.grid_len[0] * config.grid_len[1] * sizeof(float)
     );
+
+
+    //get the copy of parameters (will be modified)
+    float * f_param = (float*) malloc(config.f_param_len*sizeof(float));
+    memcpy(f_param, config.f_param, config.f_param_len*sizeof(float));
+
 
     for (size_t yi=0; yi<config.grid_len[1]; ++yi){
         for (size_t xi=0; xi<config.grid_len[0]; ++xi){
+            il_vec2 point_i;
+
+            //get x,y pair for f(x,y)
+            grid2_to_coordinates(xi,yi,config,point_i);
+            f_param[0] = point_i[0];
+            f_param[1] = point_i[1];
             
+            //calculate value
+            f_values[ GRID2_TO_FLAT(xi,yi,config) ] = 
+                config.f( f_param, config.f_param_len);
+
+            printf("f(%f,%f)=%f; ",point_i[0],point_i[1], f_values[ GRID2_TO_FLAT(xi,yi,config) ]);
+
         }
+        printf("\n");
     }
+
+
+
+
 
 }
