@@ -25,7 +25,7 @@ typedef struct {
     il_vec2 scale; // size of the area
 
     
-    float (*f)(float *, size_t);   // any mathematical function 
+    float (*f)(il_vec2, float *, size_t);   // any mathematical function 
                                             // that returns float value;
                                             // first 2 parameters are 
                                             // considered as (x,y)
@@ -68,21 +68,18 @@ static void push_connection(il_connection connection){
 
 
 static float directed_difference(
-        float (*f)(float*, size_t),
+        float (*f)(il_vec2, float*, size_t),
         float * param,
         size_t param_len,
-        il_vec2 direction
+        il_vec2 pos0,
+        il_vec2 pos1
         ) 
 {
     
-    float value_start = f(param,param_len);
+    float value0 = f(pos0,param,param_len);
+    float value1 = f(pos1,param,param_len);
 
-    float * param_end = (float*) malloc(param_len*sizeof(float));
-    memcpy(param_end, param, param_len*sizeof(float));
-
-    float value_end = f(param_end,param_len);
-
-    return value_end - value_start; //difference between points
+    return value0 - value1; //difference between points
 }
 
 
@@ -111,6 +108,40 @@ static inline void grid2_to_coordinates(
 
 
 
+static inline bool is_border_value(
+        size_t x, size_t y,
+        float * f_values,
+        il_isoline_config config
+        )
+{
+    bool in_border = 
+        f_values[GRID2_TO_FLAT(x,y,config)] >= config.f_border_value;
+    if(!in_border) return false;
+    
+    //may be on the edge of the grid itself
+    if(
+            x <= 0 ||
+            y <= 0 ||
+            x >= (config.grid_len[0]-1) ||
+            y >= (config.grid_len[1]-1)
+    ){
+        //printf("value on edge.\n");
+        return true;
+    }
+    
+    //printf("value matches conditions and not on the edge\n");
+    return (
+        f_values[GRID2_TO_FLAT(x+1,y,config)] < config.f_border_value ||
+        f_values[GRID2_TO_FLAT(x-1,y,config)] < config.f_border_value ||
+        f_values[GRID2_TO_FLAT(x,y+1,config)] < config.f_border_value ||
+        f_values[GRID2_TO_FLAT(x,y-1,config)] < config.f_border_value
+    );
+    
+    
+
+}
+
+
 void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
     
     //first step is to create value grid, where
@@ -118,30 +149,46 @@ void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
             config.grid_len[0] * config.grid_len[1] * sizeof(float)
     );
 
+    bool * border_points = (bool*) malloc(
+            config.grid_len[0] * config.grid_len[1] * sizeof(bool)
+    );
+
 
     //get the copy of parameters (will be modified)
     float * f_param = (float*) malloc(config.f_param_len*sizeof(float));
     memcpy(f_param, config.f_param, config.f_param_len*sizeof(float));
 
-
+    //calculating all values for each x,y: f(x,y)
     for (size_t yi=0; yi<config.grid_len[1]; ++yi){
         for (size_t xi=0; xi<config.grid_len[0]; ++xi){
             il_vec2 point_i;
 
             //get x,y pair for f(x,y)
             grid2_to_coordinates(xi,yi,config,point_i);
-            f_param[0] = point_i[0];
-            f_param[1] = point_i[1];
+            float f_i = config.f( point_i, f_param, config.f_param_len );
             
             //calculate value
-            f_values[ GRID2_TO_FLAT(xi,yi,config) ] = 
-                config.f( f_param, config.f_param_len);
+            f_values[ GRID2_TO_FLAT(xi,yi,config) ] = f_i;
+        }
+    }
 
-            printf("f(%f,%f)=%f; ",point_i[0],point_i[1], f_values[ GRID2_TO_FLAT(xi,yi,config) ]);
 
+
+    //select border points
+    for (size_t yi=0; yi<config.grid_len[1]; ++yi){
+        for (size_t xi=0; xi<config.grid_len[0]; ++xi){
+            il_vec2 point_i;
+            bool bvalue = is_border_value(xi,yi, f_values, config);
+            border_points[ GRID2_TO_FLAT(xi,yi,config) ] = bvalue;
+            
+            if(bvalue) printf("o ");
+            else printf(". ");
         }
         printf("\n");
     }
+
+    
+
 
 
 
