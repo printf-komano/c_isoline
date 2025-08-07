@@ -67,12 +67,14 @@ static void push_connection(il_connection connection){
 }
 
 
-static bool is_connection_exists(il_isoline_data data, size_t index0, size_t index1){
+static bool connection_exists(il_isoline_data data, size_t index0, size_t index1){
+    if(index0 == index1) return true; //connection to itself
+
     //il_vec2i p = points[index];
     for(size_t i=0; i<data.connections_len; ++i){
         if(
             (data.connections[i][0]==index0 && data.connections[i][1]==index1) ||
-            (data.connections[i][0]==index1 && data.connections[i][1]==index0) ||
+            (data.connections[i][0]==index1 && data.connections[i][1]==index0)
         ){
             return true;
         }
@@ -170,9 +172,7 @@ static inline bool is_on_border(
 }
 
 
-void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
-
-    il_isoline_data data; 
+void il_get_isoline_data(il_isoline_data * data, il_isoline_config config){
     
     //first step is to create value grid, where
     float * f_values = (float*) malloc(
@@ -203,7 +203,7 @@ void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
     }
 
 
-    data.points_len = 0;
+    data->points_len = 0;
     //select border points
     for (size_t yi=0; yi<config.grid_len[1]; ++yi){
         for (size_t xi=0; xi<config.grid_len[0]; ++xi){
@@ -211,15 +211,15 @@ void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
             bool bvalue = is_on_border(xi,yi, f_values, config);
             border_points[ GRID2_TO_FLAT(xi,yi,config) ] = bvalue;
             
-            data.points_len += bvalue;
+            data->points_len += bvalue;
 
-            if(bvalue) printf("o ");
-            else printf(". ");
+            if(bvalue) printf("o");
+            else printf(".");
         }
         printf("\n");
     }
 
-    data.points = (il_vec2i*) malloc( data.points_len*sizeof(il_vec2i) );
+    data->points = (il_vec2i*) malloc( data->points_len*sizeof(il_vec2i) );
     size_t point_count = 0;
     //il_vec2 pi;
     //grid2_to_coordinates(0,0,config,pi);
@@ -229,32 +229,43 @@ void il_get_isoline_data(il_isoline_data * out, il_isoline_config config){
             if(border_points[GRID2_TO_FLAT(xi,yi,config)]){
                 il_vec2i pi;
                 //grid2_to_coordinates(xi,yi,config,pi);
-                printf("%d added point at cords %d,%d\n",
-                    point_count,xi,yi        
-                );
+                //printf("%d added point at cords %d,%d\n",
+                //    point_count,xi,yi        
+                //);
 
-                data.points[point_count][0] = xi;
-                data.points[point_count][1] = yi;
+                data->points[point_count][0] = xi;
+                data->points[point_count][1] = yi;
                 
                 ++point_count;
             }
         }
     }
 
-
+    //printf("\nbuilding connections\n");
 
     //building connections 
     
-    data.connections_cap = config.grid_len[0] * config.grid_len[1] * 2;
-    data.connections = (il_connection*) 
-        malloc(data.connections_cap * sizeof(il_connection));
+    data->connections_cap = config.grid_len[0] * config.grid_len[1] * 2;
+    data->connections = (il_connection*) 
+        malloc(data->connections_cap * sizeof(il_connection));
+    data->connections_len = 0;
     
-    
-    for(size_t i=0; i<data.points_len; ++i){
+    for(size_t i=0; i<data->points_len; ++i){
+        for(size_t j=0; j<data->points_len; ++j){
+            if(connection_exists(*data,i,j)) continue;
 
-        if(is_connection_exists(data,i,j)) continue;
-            if
-        }    
+            //check distance between points
+            float dx = abs( data->points[i][0] - data->points[j][0] );
+            float dy = abs( data->points[i][1] - data->points[j][1] );
+            if(dx > 1.0f || dy > 1.0f) continue;
+
+            //add new connection
+            data->connections[data->connections_len][0] = i;
+            data->connections[data->connections_len][1] = j;
+
+            //printf("\t%d, %d-%d\n",data->connections_len,i,j);
+            ++data->connections_len;
+        }   
     }
 
     
