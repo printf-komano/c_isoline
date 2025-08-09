@@ -253,7 +253,7 @@ void il_get_isoline_data(il_isoline_data * data, il_isoline_config config){
     for(size_t i=0; i<data->points_len; ++i){
         for(size_t j=0; j<data->points_len; ++j){
             if(connection_exists(*data,i,j)) continue;
-
+            
             //check distance between points
             float dx = abs( data->points[i][0] - data->points[j][0] );
             float dy = abs( data->points[i][1] - data->points[j][1] );
