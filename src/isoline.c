@@ -213,10 +213,10 @@ void il_get_isoline_data(il_isoline_data * data, il_isoline_config config){
             
             data->points_len += bvalue;
 
-            if(bvalue) printf("o");
-            else printf(".");
+            //if(bvalue) printf("o");
+            //else printf(".");
         }
-        printf("\n");
+        //printf("\n");
     }
 
     data->points = (il_vec2i*) malloc( data->points_len*sizeof(il_vec2i) );
