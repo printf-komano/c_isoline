@@ -12,6 +12,26 @@
 
 
 typedef struct {
+    il_vec2 offt;
+
+    float * f_param;
+    size_t f_param_len;
+    float f_border_value; 
+
+
+    float pixel_scale;
+    il_vec2i pixel_len;
+
+
+} il_pixelsolve_config;
+
+
+
+
+
+
+
+typedef struct {
     il_vec2 vertex;
     size_t vertex_len;
 
@@ -19,38 +39,51 @@ typedef struct {
     il_connection edges;
     size_t edges_len;
     
-} il_pixel_solve_data;
+} il_pixelsolve_data;
 
 
 
 
 
 
-#define GRID2_TO_FLAT(x, y, config) ((y) * (config).grid_len[0] + (x))
+
+
+
+#define GRID2_TO_FLAT(x, y, con) ((y) * (con).pixel_len[0] + (x))
 
 static inline void grid2_to_coordinates(
-        size_t x, size_t y, il_isoline_config config, il_vec2 out
+        size_t x, size_t y,
+        il_pixelsolve_config con,
+        il_vec2 out
         )
 {
-    float x_grid_scale = (float)config.scale[0] / config.grid_len[0];
-    float y_grid_scale = (float)config.scale[1] / config.grid_len[1];
 
-    out[0] = config.offset[0] + x*x_grid_scale;
-    out[1] = config.offset[1] + y*y_grid_scale;
+    out[0] = con.offset[0] + x*con.pixel_scale;
+    out[1] = con.offset[1] + y*con.pixel_scale;
 }
 
 
 
-static inline size_t add_vertex(il_pixel_solve_data * data, il_vec2 ver){
+
+//adding vertices with auto merging
+static inline size_t add_vertex(
+        il_pixelsolve_data * data,
+        il_vec2 ver,
+        float merge_scale
+        )
+{
     for(size_t i=0; i<data->vertex_len; ++i){
 
-        //merging
+        //if new vertex is close enough to old one, merge them
         if( 
                 il_vec2_equal_approx(
                     data->vertex[i],
                     ver,
-                    (float)config.scale[0] / config.grid_len[0]) * 0.1f
+                    merge_scale
+                )
+                    
         ) return i;
+
 
         size_t offt = data->vertex_len;
         data->vertex[offt][0] = ver[0];
@@ -62,17 +95,31 @@ static inline size_t add_vertex(il_pixel_solve_data * data, il_vec2 ver){
 }
 
 
-static inline void add_edge(il_pixel_solve_data * data, il_vec2 start, il_vec2 end){
+
+static inline size_t add_edge(
+        il_pixel_solve_data * data,
+        il_vec2 start,
+        il_vec2 end,
+        float merge_scale
+        )
+{
     // decline if too short (merged points)
     if(
-        il_vec2_equal_approx(
-            start,
-            end,
-            (float)config.scale[0] / config.grid_len[0]) * 0.1f
-        )
+        il_vec2_equal_approx(start,end,merge_scale)
     ) return;
-    
+
+
+    size_t ind0 = add_vertex(data,start,merge_scale);
+    size_t ind1 = add_vertex(data,end,merge_scale);
+
+    size_t offt = data->edges_len;
+    data->edges[0] = ind0;
+    data->edges[1] = ind1;
+    ++data->edges_len;
+    return offt;
 }
+
+
 
 
 
