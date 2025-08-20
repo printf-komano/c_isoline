@@ -5,41 +5,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "ilutils.c"
+
 /*
 The main goal is to trace a contour (line)
 where function f(x,y) has the certain value
 
 we can start from type definitions
 */
-
-typedef float il_vec2[2];
-typedef uint32_t il_vec2i[2];
-typedef uint32_t il_connection[2];
-
-
-/*
-inital cofing for building isoline.
-*/
-typedef struct {
-    il_vec2 offset; // starting position for calculations
-    il_vec2 scale; // size of the area
-
-
-    float (*f)(il_vec2, float *, size_t);   // any mathematical function 
-                                            // that returns float value;
-                                            // first 2 parameters are 
-                                            // considered as (x,y)
-
-    float * f_param;
-    size_t f_param_len;
-
-    float f_border_value; // value where line is going
-    
-    il_vec2i grid_len;
-        
-} il_isoline_config;
-
-
 
 
 /*

@@ -9,7 +9,7 @@
 #include <SDL3/SDL_render.h>
 
 
-#include "src/isoline.c"
+#include "src/dot_isoline.c"
 
 
 float f(il_vec2 arg, float * param, size_t param_len){
