@@ -22,6 +22,8 @@ typedef struct {
     float pixel_scale;
     il_vec2i pixel_len;
 
+    size_t equ_iter;
+
 
 } il_pixelsolve_config;
 
@@ -160,7 +162,104 @@ static inline bool is_border_sample(il_vec2 dot, il_isoline_config con){
 
 
 
-void il_pixel_solve(il_isoline_config con, il_pixel_solve_data * data){
+static inline size_t pixel_solve_equ(
+        il_vec2 dot,            // starting point
+        il_vec2 direction,      // 1-vector, direction (horizontal/vertical)
+        il_vec3 out,            // RESULT
+        il_isoline_config con
+        )
+{
+    size_t solutions = 0;
+
+    // summary local offsed of the found solutions
+    // (later we well divide it by number to calc average coords)
+    il_vec2 sum_offt;
+    sum_offt[0] = 0.0f;
+    sum_offt[1] = 0.0f;
+
+    // select a starting point
+    il_vec2 dot_i; dot_i[0] = dot[0]; dot_i[1] = dot[1];
+    float iter_scale = con.pixel_scale / (float)con.equ_iter;
+
+
+    //get value at starting point (to compare later)
+    float val;
+    float prev_val = con.f(
+            dot_i,
+            con.f_param,
+            con.f_param_len
+    );
+
+    for(size_t i=1; i<con.equ_iter; ++i){
+
+        // move towards direction 
+        dot_i[0] += direction[0] * iter_scale; 
+        dot_i[1] += direction[1] * iter_scale;
+
+        val = con.f(
+                dot_i,
+                con.f_param,
+                con.f_param_len
+        );
+        
+        // if we see value crossing f_border_value,
+        // that means we met intersection point.
+        // add the answer to average result
+        if(
+            (val > con.f_border_value && prev_val < con.f_border_value) ||
+            (val < con.f_border_value && prev_val > con.f_border_value)
+
+        ){
+            ++solutions; // increase number of sol
+            prev_val = val; // now they are equal till next change
+            
+            // shift local coords
+            sum_offt[0] += dot_i[0] - dot[0];
+            sum_offt[1] += dot_i[1] - dot[1];
+        }
+        
+        // return result
+        out[0] = dot[0] + sum_offt[0] / (float)solutions;
+        out[1] = dot[1] + sum_offt[1] / (float)solutions;
+
+    }
+
+    return solutions;
+}
+
+
+
+
+
+
+
+static inline void pixel_solve(il_vec2 dot, il_isoline_config con){
+
+    // two opposite corners 
+
+    il_vec2 dot0;
+    il_vec2 dot1;
+
+    dot0[0] = dot[0];
+    dot0[1] = dot[1];
+    dot1[0] = dot[0] + con.pixel_scale;
+    dot1[1] = dot[1] + con.pixel_scale;
+
+
+
+    for(fl){
+    }
+
+
+
+}
+
+
+
+
+
+
+void il_pixelsolve_isoline(il_isoline_config con, il_pixel_solve_data * data){
 
     /* samples are the points only on the border between
      * values higher than f_border_value or lower than one
@@ -184,10 +283,6 @@ void il_pixel_solve(il_isoline_config con, il_pixel_solve_data * data){
             f_values[ GRID2_TO_FLAT(xi,yi,config) ] = f_i;
         }
     }
-
-
-    
-
 
     free(samples);
 }
