@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -17,7 +19,7 @@ typedef float il_section[4];
 
 
 
-inline bool il_vec2_equal_approx(il_vec2 a, il_vec2 b, float prec){
+bool il_vec2_equal_approx(il_vec2 a, il_vec2 b, float prec){
     return (
         fabs(a[0] - b[0]) < prec &&
         fabs(a[1] - b[1]) < prec

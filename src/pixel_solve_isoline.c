@@ -14,6 +14,11 @@
 typedef struct {
     il_vec2 offt;
 
+    float (*f)(il_vec2, float *, size_t);   // any mathematical function 
+                                            // that returns float value;
+                                            // first 2 parameters are 
+                                            // considered as (x,y)
+
     float * f_param;
     size_t f_param_len;
     float f_border_value; 
@@ -34,11 +39,11 @@ typedef struct {
 
 
 typedef struct {
-    il_vec2 vertex;
+    il_vec2 * vertex;
     size_t vertex_len;
 
 
-    il_connection edges;
+    il_connection * edges;
     size_t edges_len;
     
 } il_pixelsolve_data;
@@ -60,8 +65,8 @@ static inline void grid2_to_coordinates(
         )
 {
 
-    out[0] = con.offset[0] + x*con.pixel_scale;
-    out[1] = con.offset[1] + y*con.pixel_scale;
+    out[0] = con.offt[0] + x*con.pixel_scale;
+    out[1] = con.offt[1] + y*con.pixel_scale;
 }
 
 
@@ -98,8 +103,8 @@ static inline size_t add_vertex(
 
 
 
-static inline size_t add_edge(
-        il_pixel_solve_data * data,
+static inline int32_t add_edge(
+        il_pixelsolve_data * data,
         il_vec2 start,
         il_vec2 end,
         float merge_scale
@@ -108,15 +113,15 @@ static inline size_t add_edge(
     // decline if too short (merged points)
     if(
         il_vec2_equal_approx(start,end,merge_scale)
-    ) return;
+    ) return -1;
 
 
     size_t ind0 = add_vertex(data,start,merge_scale);
     size_t ind1 = add_vertex(data,end,merge_scale);
 
     size_t offt = data->edges_len;
-    data->edges[0] = ind0;
-    data->edges[1] = ind1;
+    data->edges[offt][0] = ind0;
+    data->edges[offt][1] = ind1;
     ++data->edges_len;
     return offt;
 }
@@ -129,15 +134,15 @@ static inline size_t add_edge(
 if at least one value in 3x3 space is dofferent, return true
 this chack may be high at const, but whatever
 */
-static inline bool is_border_sample(il_vec2 dot, il_isoline_config con){
+static inline bool is_border_sample(il_vec2 dot, il_pixelsolve_config con){
     il_vec2 dot_i;
     bool greater = false; bool ret = false;
 
     for (int i = 0; i < 9; ++i){
         // adding a half of the pixel on each iteration
         // grid is gonna be 3x3 (static size)
-        float x_offt = (i%3) * (con.scale[0] / con.grid_len[0]) * 0.5f;
-        float y_offt = (i/3) * (con.scale[1] / con.grid_len[1]) * 0.5f;
+        float x_offt = (i%3) * con.pixel_scale * 0.5f;
+        float y_offt = (i/3) * con.pixel_scale * 0.5f;
 
         dot_i[0]=dot[0]+x_offt; dot_i[1]=dot[1]+y_offt;
 
@@ -165,8 +170,8 @@ static inline bool is_border_sample(il_vec2 dot, il_isoline_config con){
 static inline size_t pixel_solve_equ(
         il_vec2 dot,            // starting point
         il_vec2 direction,      // 1-vector, direction (horizontal/vertical)
-        il_vec3 out,            // RESULT
-        il_isoline_config con
+        il_vec2 out,            // RESULT
+        il_pixelsolve_config con
         )
 {
     size_t solutions = 0;
@@ -233,7 +238,12 @@ static inline size_t pixel_solve_equ(
 
 
 
-static inline void pixel_solve(il_vec2 dot, il_isoline_config con){
+static inline void pixel_solve(
+        il_pixelsolve_data * data,
+        il_vec2 dot,
+        il_pixelsolve_config con
+        )
+{
 
     // two opposite corners 
 
@@ -247,10 +257,39 @@ static inline void pixel_solve(il_vec2 dot, il_isoline_config con){
 
 
 
-    for(fl){
-    }
+    // directions for solving equations
+    il_vec2 dir[4] = {
+        {1.0f,  0.0f},
+        {0.0f,  1.0f},
+        {-1.0f, 0.0f},
+        {0.0f,  -1.0f}
+    };
+
+    il_vec2 res[4];
+    size_t res_len[4];
+    size_t vertex_ind[4];
+
+    // solving two equations from opposite corners 
+    // (to cover a full pixel contour)
+
+    res_len[0] = pixel_solve_equ(dot0,dir[0],res[0],con);
+    res_len[1] = pixel_solve_equ(dot0,dir[1],res[1],con);
+
+    res_len[2] = pixel_solve_equ(dot1,dir[2],res[2],con);
+    res_len[2] = pixel_solve_equ(dot1,dir[3],res[3],con);
+
+    if(
+        res_len[0]+res_len[1]+res_len[2]+res_len[3] < 2 
+    ) return;
+    
+    float prec = con.pixel_scale / con.equ_iter; 
 
 
+    if( res_len[0]>0 && res_len[1]>0 ) add_edge(data, res[0], res[1], prec);
+    if( res_len[1]>0 && res_len[2]>0 ) add_edge(data, res[1], res[2], prec);
+    if( res_len[2]>0 && res_len[3]>0 ) add_edge(data, res[2], res[3], prec);
+    if( res_len[3]>0 && res_len[1]>0 ) add_edge(data, res[3], res[0], prec);
+    
 
 }
 
@@ -259,30 +298,16 @@ static inline void pixel_solve(il_vec2 dot, il_isoline_config con){
 
 
 
-void il_pixelsolve_isoline(il_isoline_config con, il_pixel_solve_data * data){
+void il_pixelsolve_isoline(il_pixelsolve_config con, il_pixelsolve_data * data){
 
     /* samples are the points only on the border between
      * values higher than f_border_value or lower than one
      * sample placed only, if f() value is higher
     */
-    il_vec2 * samples = (bool*) malloc(
-            config.grid_len[0] * config.grid_len[1] * sizeof(il_vec2)
+    il_vec2 * samples = (il_vec2*) malloc(
+            con.pixel_len[0] * con.pixel_len[1] * sizeof(il_vec2)
     );
     size_t samples_len = 0;
-
-    //calculating all values for each x,y: f(x,y)
-    for (size_t yi=0; yi<config.grid_len[1]; ++yi){
-        for (size_t xi=0; xi<config.grid_len[0]; ++xi){
-            il_vec2 point_i;
-
-            //get x,y pair for f(x,y)
-            grid2_to_coordinates(xi,yi,config,point_i);
-            float f_i = config.f( point_i, f_param, config.f_param_len );
-            
-            //calculate value
-            f_values[ GRID2_TO_FLAT(xi,yi,config) ] = f_i;
-        }
-    }
 
     free(samples);
 }

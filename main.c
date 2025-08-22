@@ -10,7 +10,7 @@
 
 
 #include "src/dot_isoline.c"
-
+#include "src/pixel_solve_isoline.c"
 
 float f(il_vec2 arg, float * param, size_t param_len){
     return (sinf(arg[0]*param[1]) + sqrtf(arg[1]*param[1])) * param[0];
