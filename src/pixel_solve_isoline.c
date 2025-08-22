@@ -131,37 +131,45 @@ static inline int32_t add_edge(
 
 
 /*
-if at least one value in 3x3 space is dofferent, return true
-this chack may be high at const, but whatever
+this functions checks 4 corners of a pixel.
+if one of the values is different (oppisite of f_border_value),
+return true.
 */
 static inline bool is_border_sample(il_vec2 dot, il_pixelsolve_config con){
-    il_vec2 dot_i;
-    bool greater = false; bool ret = false;
+    il_vec2 corners[4];
+    float first;
 
-    for (int i = 0; i < 9; ++i){
-        // adding a half of the pixel on each iteration
-        // grid is gonna be 3x3 (static size)
-        float x_offt = (i%3) * con.pixel_scale * 0.5f;
-        float y_offt = (i/3) * con.pixel_scale * 0.5f;
 
-        dot_i[0]=dot[0]+x_offt; dot_i[1]=dot[1]+y_offt;
+    /*
+        0--1
+        |  |
+        2--3
+    */
+    corners[0][0] = dot[0]; 
+    corners[0][1] = dot[1];
 
-        float value = con.f( dot_i, con.f_param, con.f_param_len );
+    corners[1][0] = dot[0] + con.pixel_scale;
+    corners[1][1] = dot[1];
 
-        // for the first iteration, we just check value
-        // (less/greater)
-        if(i==0) greater = value > con.f_border_value; 
+    corners[2][0] = dot[0];
+    corners[2][1] = dot[1] + con.pixel_scale;
 
-        //on the next iterations, we look for the opposite 
-        //(if there at least one value greater/less)
-        else if(
-                !greater && value > con.f_border_value ||
-                greater && value < con.f_border_value
-            ){
-                return true;
+    corners[3][0] = dot[0] + con.pixel_scale;
+    corners[3][1] = dot[1] + con.pixel_scale;
+
+
+
+    for(size_t i=0; i<4; ++i){
+        float fi = con.f(corners[i], con.f_param, con.f_param_len);
+        if(i==0) first = fi;
+        else if (
+                fi > con.f_border_value && first < con.f_border_value ||
+                fi < con.f_border_value && first > con.f_border_value ||
+        ){
+            return true;
         }
     }
-    return false; 
+    return false;
 }
 
 
@@ -299,15 +307,6 @@ static inline void pixel_solve(
 
 
 void il_pixelsolve_isoline(il_pixelsolve_config con, il_pixelsolve_data * data){
+ 
 
-    /* samples are the points only on the border between
-     * values higher than f_border_value or lower than one
-     * sample placed only, if f() value is higher
-    */
-    il_vec2 * samples = (il_vec2*) malloc(
-            con.pixel_len[0] * con.pixel_len[1] * sizeof(il_vec2)
-    );
-    size_t samples_len = 0;
-
-    free(samples);
 }
