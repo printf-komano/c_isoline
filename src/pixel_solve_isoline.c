@@ -79,9 +79,9 @@ static inline size_t add_vertex(
         float merge_scale
         )
 {
-    printf("adding vert at:\t(%f:%f);\n",
+    /*printf("adding vert at:\t(%f:%f);\n",
             ver[0],ver[1]
-    );
+    );*/
 
     
     for(size_t i=0; i<data->vertex_len; ++i){
@@ -95,7 +95,7 @@ static inline size_t add_vertex(
                 )
                     
         ){
-            printf("\t\tnew vert MRG with %d\n", i);
+            //printf("\t\tnew vert MRG with %d\n", i);
             return i;
         } 
     }
@@ -107,7 +107,7 @@ static inline size_t add_vertex(
     data->vertex[offt][0] = ver[0];
     data->vertex[offt][1] = ver[1];
     ++data->vertex_len;
-    printf("\t\tnew vert ADD with %d\n", offt);
+    //printf("\t\tnew vert ADD with %d\n", offt);
     return offt;
 }
 
@@ -136,13 +136,13 @@ static inline int32_t add_edge(
     data->edges[offt][1] = ind1;
     ++data->edges_len;
 
-    printf("added edge %d(%d - %d) at:\t(%f:%f)\t(%f:%f);\n",
+    /*printf("added edge %d(%d - %d) at:\t(%f:%f)\t(%f:%f);\n",
             offt,
             ind0,
             ind1,
             start[0],start[1],
             end[0],end[1]
-    );
+    );*/
 
     return offt;
 }
@@ -211,11 +211,11 @@ static inline size_t pixel_solve_equ(
     dot_i[0] = dot[0]; dot_i[1] = dot[1];
 
 
-    printf("\tequ(prec %f):\tstart(%f:%f)\tdir(%f:%f)\n",
+    /*printf("\tequ(prec %f):\tstart(%f:%f)\tdir(%f:%f)\n",
         iter_scale,
         dot_i[0],dot_i[1],
         direction[0],direction[1]
-    );
+    );*/
 
 
     // summary local offsed of the found solutions
@@ -234,7 +234,7 @@ static inline size_t pixel_solve_equ(
     );
     float prev_val = val;
 
-    for(size_t i=1; i<con.equ_iter; ++i){
+    for(size_t i=1; i<con.equ_iter+1; ++i){
 
         // move towards direction 
         dot_i[0] += direction[0] * iter_scale; 
@@ -279,10 +279,10 @@ static inline size_t pixel_solve_equ(
     out[1] = dot[1] + (sum_offt[1] / (float)solutions);
 
 
-    printf("\tequ solved:\t%f:%f\n",
+    /*printf("\tequ solved:\t%f:%f\n",
         out[0],
         out[1]
-    );
+    );*/
 
     return solutions;
 }
@@ -308,12 +308,12 @@ static inline void pixel_solve(
     dot0[0] = dot[0];
     dot0[1] = dot[1];
 
-    printf("CORNER0:\t%f:%f\n",dot0[0],dot0[1]);
+    //printf("CORNER0:\t%f:%f\n",dot0[0],dot0[1]);
 
     dot1[0] = dot0[0] + con.pixel_scale;
     dot1[1] = dot0[1] + con.pixel_scale;
 
-    printf("CORNER1:\t%f:%f\n",dot1[0],dot1[1]);
+    //printf("CORNER1:\t%f:%f\n",dot1[0],dot1[1]);
 
 
 

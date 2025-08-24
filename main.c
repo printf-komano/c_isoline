@@ -19,9 +19,9 @@ float f(il_vec2 arg, float * param, size_t param_len){
 
 #define P_LEN 3
 
-#define LINES_COUNT 100
-#define LINE_BORDER_START -2.0f
-#define LINE_BORDER_DIFF 0.08f
+#define LINES_COUNT 256
+#define LINE_BORDER_START -3.0f
+#define LINE_BORDER_DIFF 0.05f
 
 float DRAW_SCALING = 100.0f;
 float DRAW_OFFSET = 10.0f;
